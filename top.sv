@@ -16,6 +16,7 @@ module top();
   logic  sda_en;
 
   i2c_wrapper dut (.*);
+  
 
   parameter CLOCKCYCLE = 20;
   parameter CLOCKWIDTH = CLOCKCYCLE/2;
@@ -39,7 +40,7 @@ module top();
 		S = 3'd1; D = 8'b1110_0101;  MSBIn = 1'b1; LSBIn = 1'b0;
 		repeat(1) @(negedge clk);
 		wr_en = '0;
-		repeat(35) @(negedge clk);
+		repeat(40) @(negedge clk);
 
 		rd_en = '1;
 		addr = 6'b01_0011;
@@ -47,20 +48,20 @@ module top();
 		repeat(1) @(negedge clk);
 		rd_en = '0;
 
-		repeat(25) @(negedge clk);
+		repeat(30) @(negedge clk);
 
 		$stop();
 
 	end
 
-	assign dut.sda = sda_en ? '0 : 'z;
+	// assign dut.sda = sda_en ? '0 : 'z;
 
-	always @(posedge clk) begin
-		if((dut.i2c.state == 'd5) && (dut.i2c.next_state == 'd5))
-			sda_en = 1'b1;
-		else
-			sda_en = 1'b0;
-	end
+	// always @(posedge clk) begin
+	// 	if((i2c_dut.i2c.state == 'd5) && (i2c_dut.i2c.next_state == 'd5))
+	// 		sda_en = 1'b1;
+	// 	else
+	// 		sda_en = 1'b0;
+	// end
 
 
 
