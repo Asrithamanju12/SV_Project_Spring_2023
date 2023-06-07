@@ -1,6 +1,11 @@
-`define DELAY(n) repeat(n) @(negedge clock)
+import definitions::*;
 
+`define STALL(n) repeat(n) @(negedge clk)
 
+`define MEM_WRITE(adr, d) \
+      wr_en = 1; addr = adr; D = d; \
+      `STALL(1);  \
+      wr_en = 0;
 
 
 module top();
@@ -19,6 +24,8 @@ module top();
 	  logic [DATAWIDTH-1:0] dataout;
 	  logic DataValid;
 
+	  int i, error;
+
   i2c_wrapper dut (.*);
   
 
@@ -30,33 +37,33 @@ module top();
 		forever #CLOCKWIDTH clk = ~clk;
 	end
 
-	initial begin
-		repeat(5) @(negedge clk);
-		reset = '1;
-		repeat(5) @(negedge clk);
-		reset = '0;
-		repeat(5) @(negedge clk);
-
-		wr_en = '0;
-		repeat(5) @(negedge clk);
-		wr_en = '1;
-		addr = 6'b00_1101;
-		S = 3'd1; D = 8'b1110_0101;  MSBIn = 1'b1; LSBIn = 1'b0;
-		repeat(1) @(negedge clk);
-		wr_en = '0;
-		repeat(40) @(negedge clk);
-
-		rd_en = '1;
-		addr = 6'b00_1101;
-
-		repeat(1) @(negedge clk);
-		rd_en = '0;
-
-		repeat(30) @(negedge clk);
-
-		$stop();
-
-	end
+//	initial begin
+//		repeat(5) @(negedge clk);
+//		reset = '1;
+//		repeat(5) @(negedge clk);
+//		reset = '0;
+//		repeat(5) @(negedge clk);
+//
+//		wr_en = '0;
+//		repeat(5) @(negedge clk);
+//		wr_en = '1;
+//		addr = 6'b00_1101;
+//		S = 3'd1; D = 8'b1110_0101;  MSBIn = 1'b1; LSBIn = 1'b0;
+//		repeat(1) @(negedge clk);
+//		wr_en = '0;
+//		repeat(40) @(negedge clk);
+//
+//		rd_en = '1;
+//		addr = 6'b00_1101;
+//
+//		repeat(1) @(negedge clk);
+//		rd_en = '0;
+//
+//		repeat(30) @(negedge clk);
+//
+//		$stop();
+//
+//	end
 
 	// assign dut.sda = sda_en ? '0 : 'z;
 
@@ -66,6 +73,28 @@ module top();
 	// 	else
 	// 		sda_en = 1'b0;
 	// end
+
+	initial begin
+		 reset = 1;
+      `STALL(5);
+      reset = 0;
+      
+      ////////// Memory Initialization
+ 
+      repeat(2**ADDRWIDTH-1) @(negedge clk) begin
+      	wr_en = 1; 
+      	for(i=0; i<256; i++) begin
+      	S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
+        `MEM_WRITE(i,i); 
+        `STALL(1);
+      	end
+      	wr_en = '0;
+      end
+
+      $stop();
+
+
+	end
 
 
 

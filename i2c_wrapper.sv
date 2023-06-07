@@ -1,6 +1,6 @@
+import definitions::*;
+
 module i2c_wrapper 
-	#(parameter DATAWIDTH      = 8,
-      parameter ADDRWIDTH      = 6)
 	 (input clk,
 	  input reset,
 	  input [DATAWIDTH-1:0] D,

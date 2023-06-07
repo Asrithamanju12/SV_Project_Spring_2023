@@ -1,6 +1,6 @@
+import definitions::*;
+
 module ShiftRegister
-#(parameter N = 8,
-  parameter ADDRWIDTH = 6)
  (output logic [N-1:0] Q,
  input Clock,
  input Clear,

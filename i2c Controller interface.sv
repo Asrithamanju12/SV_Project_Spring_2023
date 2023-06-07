@@ -1,9 +1,6 @@
+import definitions::*;
+
 module i2cController 
-	#(parameter DATAWIDTH      = 8,
-  	  parameter ADDRWIDTH      = 6,
-	  parameter SLV_ADDR_SIZE  = 7,
-	  parameter SLV_ADDR_PARAM = 7'b101_1001)
-	 
 	 (input logic clk, reset, wr_en, rd_en, 
 	  input logic [DATAWIDTH-1:0] data, 
 	  input logic [ADDRWIDTH-1:0] addr,  
