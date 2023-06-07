@@ -24,7 +24,7 @@ module i2c_wrapper
   	 logic [DATAWIDTH-1:0] mem_data_in;
 	 logic [ADDRWIDTH-1:0] mem_addr_in;
 
-	 assign mux_addr = wr_en_ff ? addr_ff : addr ;
+	 assign mux_addr = wr_en_ff ? addr_ff : addr;
 
 	ShiftRegister SR(.Q(data), .Clock(clk), .Clear(~reset), .D(D), .S(S), .MSBIn(MSBIn), .LSBIn(LSBIn),
 					 .wr_en(wr_en), .addr(addr), .addr_ff(addr_ff), .wr_en_ff(wr_en_ff));

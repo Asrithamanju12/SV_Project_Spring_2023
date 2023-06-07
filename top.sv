@@ -75,18 +75,17 @@ module top();
 	// end
 
 	initial begin
-		 reset = 1;
+		  reset = 1;
       `STALL(5);
       reset = 0;
       
-      ////////// Memory Initialization
- 
-      repeat(2**ADDRWIDTH-1) @(negedge clk) begin
-      	wr_en = 1; 
-      	for(i=0; i<256; i++) begin
+      ////////// Memory Initialization//////////
+      	wr_en = 1; begin
       	S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
+      	repeat(2**ADDRWIDTH-1) @(negedge clk)
+      	for(i=0; i<2**ADDRWIDTH; i++) begin
         `MEM_WRITE(i,i); 
-        `STALL(1);
+        `STALL(12);
       	end
       	wr_en = '0;
       end
@@ -95,7 +94,5 @@ module top();
 
 
 	end
-
-
 
 endmodule : top
