@@ -1,19 +1,23 @@
+`define DELAY(n) repeat(n) @(negedge clock)
+
+
+
+
 module top();
 
   parameter DATAWIDTH      = 8;
   parameter ADDRWIDTH      = 6;
 
-  logic  clk;
-  logic  reset;
-  logic  [DATAWIDTH-1:0] D;
-  logic  [$clog2(DATAWIDTH)-1:0] S;
-  logic  MSBIn;
-  logic  LSBIn;
-  logic  [ADDRWIDTH-1:0] addr;
-  logic  wr_en, rd_en;
-  logic  scl;
-  wire   sda;
-  logic  sda_en;
+  	logic clk;
+	  logic reset;
+	  logic [DATAWIDTH-1:0] D;
+	  logic [$clog2(DATAWIDTH)-1:0] S;
+	  logic MSBIn;
+	  logic LSBIn;
+	  logic [ADDRWIDTH-1:0] addr;
+	  logic wr_en, rd_en;
+	  logic [DATAWIDTH-1:0] dataout;
+	  logic DataValid;
 
   i2c_wrapper dut (.*);
   
@@ -43,7 +47,7 @@ module top();
 		repeat(40) @(negedge clk);
 
 		rd_en = '1;
-		addr = 6'b01_0011;
+		addr = 6'b00_1101;
 
 		repeat(1) @(negedge clk);
 		rd_en = '0;

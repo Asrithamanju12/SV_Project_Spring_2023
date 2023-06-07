@@ -8,7 +8,9 @@ module i2c_wrapper
 	  input MSBIn,
 	  input LSBIn,
 	  input [ADDRWIDTH-1:0] addr,
-	  input wr_en, rd_en);
+	  input wr_en, rd_en,
+	  output logic [DATAWIDTH-1:0] dataout,
+	  output logic DataValid);
 
 	 logic [DATAWIDTH-1:0] data;
 	 logic [ADDRWIDTH-1:0] addr_ff;
@@ -31,6 +33,8 @@ module i2c_wrapper
 
 	memoryController mmc(.wr_en(mem_wr_en_in), .rd_en(mem_rd_en_in),
 						 .addr(mem_addr_in),   .data(mem_data_in), .*);
+
+	Memory mem (.wr_en(mem_wr_en_in), .rd_en(mem_rd_en_in), .addr(mem_addr_in), .datain(mem_data_in), .*);
 
 
 endmodule : i2c_wrapper
