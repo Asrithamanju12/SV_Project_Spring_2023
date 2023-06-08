@@ -5,13 +5,14 @@ package definitions;
 //-----------------------------------------------------------------
 
 
-  parameter N = 8;
+  //parameter N = 8;
   parameter ADDRWIDTH = 6;
   parameter DATAWIDTH      = 8;
   parameter SLV_ADDR_SIZE  = 7;
   parameter SLV_ADDR_PARAM = 7'b101_1001;
   parameter WRITE_LAT      = 35;
   parameter READ_LAT       = 24;
+
 
   parameter CLOCKCYCLE = 20;
   parameter CLOCKWIDTH = CLOCKCYCLE/2;

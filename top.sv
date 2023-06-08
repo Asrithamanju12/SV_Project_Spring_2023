@@ -4,22 +4,33 @@ import definitions::*;
 `define ADDR_RNG ADDRWIDTH-1:0
 `define DATA_RNG DATAWIDTH-1:0
 
+localparam
+NOP	 = 3'b000,	// No operation
+LOAD = 3'b001,	// Load
+LSR	 = 3'b010,	// Logical Shift Right
+LSL	 = 3'b011,	// Logical Shift Left
+RR   = 3'b100,	// Rotate Right
+RL   = 3'b101,	// Rotate Left
+ASR	 = 3'b110,	// Arithmetic Shift Right
+ASL	 = 3'b111;	// Arithmetic Shift Left
+
 module top();
 
   	logic clk;
 	  logic reset;
-	  logic [DATAWIDTH-1:0] D;
-	  logic [$clog2(DATAWIDTH)-1:0] S;
+	  logic [`DATA_RNG] D;
+	  logic [2:0] S;
 	  logic MSBIn;
 	  logic LSBIn;
-	  logic [ADDRWIDTH-1:0] addr;
+	  logic [`ADDR_RNG] addr;
 	  logic wr_en, rd_en;
-	  logic [DATAWIDTH-1:0] dataout;
+	  logic [`DATA_RNG] dataout;
 	  logic DataValid;
 
 	  ref_mem memModel;
 
-	  int i, error;
+	  int i, j;
+	  bit error;
 
   i2c_wrapper dut (.*);
 
@@ -45,11 +56,34 @@ module top();
 		forever #CLOCKWIDTH clk = ~clk;
 	end
 
-  task automatic wrMem(input [`ADDR_RNG] adr, input [`DATA_RNG] d);
+	function logic [`DATA_RNG] ref_mem_SR(logic [`DATA_RNG] D, logic [2:0] sel, logic MSB, LSB);
+		localparam N = DATAWIDTH;
+
+		case (sel)
+				NOP:	ref_mem_SR = dut.data;
+				LOAD:	ref_mem_SR = D;
+				LSR:	ref_mem_SR = {MSBIn,dut.data[N-1:1]};
+				LSL:	ref_mem_SR = {dut.data[N-2:0],LSBIn};
+				RR:	  ref_mem_SR = {dut.data[0],dut.data[N-1:1]};
+				RL:	  ref_mem_SR = {dut.data[N-2:0],dut.data[N-1]};
+				ASR:	ref_mem_SR = {dut.data[N-1],dut.data[N-1:1]};
+				ASL:	ref_mem_SR = {dut.data[N-2:0],1'b0};
+			endcase // sel
+
+	endfunction
+
+  task automatic wrMem(input [`ADDR_RNG] adr, 
+  									   input [`DATA_RNG] d, 
+  									   input [2:0] sel, 
+  									   input MSB, LSB);
         wr_en = 1; 
         addr = adr; 
         D = d; 
-        memModel.write(adr, d);
+        S = sel;
+        MSBIn = MSB;
+        LSBIn = LSB;
+
+        memModel.write(adr, ref_mem_SR(d, sel, MSB, LSB));
         `STALL(1);
         wr_en = '0;
         `STALL(WRITE_LAT); 
@@ -82,7 +116,7 @@ module top();
       	if (error == 0) $display("-- Memory chk thru i2c successful--");
  	endtask
 
-	function automatic logic [DATAWIDTH-1:0] mem_val(logic [ADDRWIDTH-1:0] addr);
+	function automatic logic [`DATA_RNG] mem_val(logic [`ADDR_RNG] addr);
     mem_val = dut.mem.mem[addr];
   endfunction
 
@@ -102,7 +136,7 @@ module top();
       wr_en = 1; 
       S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
       for(i=0; i<(1 << (ADDRWIDTH)); i++) begin
-       	wrMem(i,i); 
+       	wrMem(i,i, S, MSBIn, LSBIn); 
       end
 
       `STALL(10);
@@ -130,16 +164,31 @@ module top();
 
        randData = new;
 			 randAddr = new;
-
+			 S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
     	 for(i=0; i<(1 << (ADDRWIDTH)); i++) begin
     	 		assert(randData.randomize()) else $error("Data randomization failed");
     	 		assert(randAddr.randomize()) else $error("Addr randomization failed");
-					wrMem(randAddr.addr, randData.data); 
+					wrMem(randAddr.addr, randData.data, S, MSBIn, LSBIn); 
        end
 
        `STALL(5);
 
        $display("Checking randomly populated memory");
+       mem_chk_full();
+
+       ////////// Checking SR ops using randomization //////////
+			for(i=0; i<8; i++) begin // iterate over all sel values
+				S = i;
+				for(j=0; j<(2**ADDRWIDTH)/8; j++) begin
+    	 		assert(randData.randomize()) else $error("Data randomization failed");
+    	 		// assert(randAddr.randomize()) else $error("Addr randomization failed");
+    	 		MSBIn = $random;
+					LSBIn = $random;
+					wrMem(j, randData.data, i, MSBIn, LSBIn); 
+       end			
+      end
+
+			 $display("Checking different SR ops");
        mem_chk_full();
 
        $stop();

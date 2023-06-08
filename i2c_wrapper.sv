@@ -4,7 +4,7 @@ module i2c_wrapper
 	 (input clk,
 	  input reset,
 	  input [DATAWIDTH-1:0] D,
-	  input [$clog2(DATAWIDTH)-1:0] S,
+	  input [2:0] S,
 	  input MSBIn,
 	  input LSBIn,
 	  input [ADDRWIDTH-1:0] addr,

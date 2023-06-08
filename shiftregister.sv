@@ -1,11 +1,11 @@
 import definitions::*;
 
 module ShiftRegister
- (output logic [N-1:0] Q,
+ (output logic [DATAWIDTH-1:0] Q,
  input Clock,
  input Clear,
- input [N-1:0] D,
- input [$clog2(N)-1:0] S,
+ input [DATAWIDTH-1:0] D,
+ input [2:0] S,
  input MSBIn,
  input LSBIn,
  input wr_en,

@@ -1,5 +1,15 @@
 import definitions::*;
 
+localparam
+NOP	 = 3'b000,	// No operation
+LOAD = 3'b001,	// Load
+LSR	 = 3'b010,	// Logical Shift Right
+LSL	 = 3'b011,	// Logical Shift Left
+ROTR = 3'b100,	// Rotate Right
+ROTL = 3'b101,	// Rotate Left
+ASR	 = 3'b110,	// Arithmetic Shift Right
+ASL	 = 3'b111;	// Arithmetic Shift Left
+
 module top_Assertions
 	 (// Inputs
 	  input clk,
@@ -17,7 +27,7 @@ module top_Assertions
 	  input mem_wr_en_in,
 	  input [DATAWIDTH-1:0] mem_data_in,
 	  input [ADDRWIDTH-1:0] mem_addr_in,
-	  input Q_data);
+	  input [DATAWIDTH-1:0] Q_data);
 
 	 // Reset properties
 	 property p_rst_all_inp_0;
@@ -85,12 +95,35 @@ module top_Assertions
 	 endproperty
 	 	a_LSR_data_intg: assert property (p_LSR_data_intg);
 
+	 property p_LSL_data_intg;
+	 	@(posedge clk) disable iff (reset)
+	 	(wr_en && (S == 'd3)) |-> ##WRITE_LAT (mem_data_in == {$past(Q_data[6:0], WRITE_LAT), $past(LSBIn, WRITE_LAT)});
+	 endproperty
+	 	a_LSL_data_intg: assert property (p_LSL_data_intg);
 
+	 property p_RR_data_intg;
+	 	@(posedge clk) disable iff (reset)
+	 	(wr_en && (S == 'd4)) |-> ##WRITE_LAT (mem_data_in == {$past(Q_data[0], WRITE_LAT), $past(Q_data[7:1], WRITE_LAT)});
+	 endproperty
+	 	a_RR_data_intg: assert property (p_RR_data_intg);
 
+	 property p_RL_data_intg;
+	 	@(posedge clk) disable iff (reset)
+	 	(wr_en && (S == 'd5)) |-> ##WRITE_LAT (mem_data_in == {$past(Q_data[6:0], WRITE_LAT), $past(Q_data[7], WRITE_LAT)});
+	 endproperty
+	 	a_RL_data_intg: assert property (p_RL_data_intg);
 
+	 property p_ASR_data_intg;
+	 	@(posedge clk) disable iff (reset)
+	 	(wr_en && (S == 'd6)) |-> ##WRITE_LAT (mem_data_in == {$past(Q_data[7], WRITE_LAT), $past(Q_data[7:1], WRITE_LAT)});
+	 endproperty
+	 	a_ASR_data_intg: assert property (p_ASR_data_intg);
 
-
-
+	 property p_ASL_data_intg;
+	 	@(posedge clk) disable iff (reset)
+	 	(wr_en && (S == 'd7)) |-> ##WRITE_LAT (mem_data_in == {$past(Q_data[6:0], WRITE_LAT), $past('0, WRITE_LAT)});
+	 endproperty
+	 	a_ASL_data_intg: assert property (p_ASL_data_intg);
 
 
 
