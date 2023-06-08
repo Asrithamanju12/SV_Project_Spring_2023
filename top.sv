@@ -1,17 +1,10 @@
 import definitions::*;
 
 `define STALL(n) repeat(n) @(negedge clk)
-
-`define MEM_WRITE(adr, d) \
-      wr_en = 1; addr = adr; D = d; \
-      `STALL(1);  \
-      wr_en = 0;
-
+`define ADDR_RNG ADDRWIDTH-1:0
+`define DATA_RNG DATAWIDTH-1:0
 
 module top();
-
-  parameter DATAWIDTH      = 8;
-  parameter ADDRWIDTH      = 6;
 
   	logic clk;
 	  logic reset;
@@ -24,75 +17,117 @@ module top();
 	  logic [DATAWIDTH-1:0] dataout;
 	  logic DataValid;
 
+	  ref_mem memModel;
+
 	  int i, error;
 
   i2c_wrapper dut (.*);
-  
-
-  parameter CLOCKCYCLE = 20;
-  parameter CLOCKWIDTH = CLOCKCYCLE/2;
 
 	initial begin
 		clk = '0;
 		forever #CLOCKWIDTH clk = ~clk;
 	end
 
-//	initial begin
-//		repeat(5) @(negedge clk);
-//		reset = '1;
-//		repeat(5) @(negedge clk);
-//		reset = '0;
-//		repeat(5) @(negedge clk);
-//
-//		wr_en = '0;
-//		repeat(5) @(negedge clk);
-//		wr_en = '1;
-//		addr = 6'b00_1101;
-//		S = 3'd1; D = 8'b1110_0101;  MSBIn = 1'b1; LSBIn = 1'b0;
-//		repeat(1) @(negedge clk);
-//		wr_en = '0;
-//		repeat(40) @(negedge clk);
-//
-//		rd_en = '1;
-//		addr = 6'b00_1101;
-//
-//		repeat(1) @(negedge clk);
-//		rd_en = '0;
-//
-//		repeat(30) @(negedge clk);
-//
-//		$stop();
-//
-//	end
+  task automatic wrMem(input [`ADDR_RNG] adr, input [`DATA_RNG] d);
+        wr_en = 1; 
+        addr = adr; 
+        D = d; 
+        memModel.write(adr, d);
+        `STALL(1);
+        wr_en = '0;
+        `STALL(WRITE_LAT); 
+    endtask
 
-	// assign dut.sda = sda_en ? '0 : 'z;
+	task automatic rdMem(input [`ADDR_RNG] adr, output [`DATA_RNG] dout);
+      rd_en = 1; 
+      addr  = adr;
+      `STALL(1);
+      rd_en = 0;
+      wait(DataValid);
+      dout = dataout;
+      `STALL(1);
+  endtask
 
-	// always @(posedge clk) begin
-	// 	if((i2c_dut.i2c.state == 'd5) && (i2c_dut.i2c.next_state == 'd5))
-	// 		sda_en = 1'b1;
-	// 	else
-	// 		sda_en = 1'b0;
-	// end
+  task automatic mem_chk_full();
+  	  logic [`DATA_RNG] dout;
+		  error = 0; 
+
+      	for(int i=0; i<(1 << (ADDRWIDTH)); i++) begin
+      		rdMem(i, dout);
+      		// $display("%d", dout);
+					if (dout != memModel.read(i)) begin
+           error = 1;
+           $display("Error in Memory read at address = %d, value = %d", i, dout);
+        	end
+        	`STALL(1);
+      	end
+
+      	if (error == 0) $display("-- Memory chk thru i2c successful--");
+ 	endtask
+
+	function automatic logic [DATAWIDTH-1:0] mem_val(logic [ADDRWIDTH-1:0] addr);
+    mem_val = dut.mem.mem[addr];
+  endfunction
 
 	initial begin
-		  reset = 1;
+
+		  data_rand #(DATAWIDTH) randData;
+    	addr_rand #(ADDRWIDTH) randAddr;
+    	logic [`DATA_RNG] dout;
+
+		  ///////// Reset ////////
+		  memModel = new;
+		  reset = 1; wr_en = '0; rd_en = '0;
       `STALL(5);
       reset = 0;
       
-      ////////// Memory Initialization//////////
-      	wr_en = 1; begin
-      	S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
-      	repeat(2**ADDRWIDTH-1) @(negedge clk)
-      	for(i=0; i<2**ADDRWIDTH; i++) begin
-        `MEM_WRITE(i,i); 
-        `STALL(12);
-      	end
-      	wr_en = '0;
+      ////////// Memory Initialization(Write operation)//////////
+      wr_en = 1; 
+      S = 3'd1; MSBIn = 1'b0; LSBIn = 1'b0; // Parallel Load Operation
+      for(i=0; i<(1 << (ADDRWIDTH)); i++) begin
+       	wrMem(i,i); 
       end
 
-      $stop();
+      `STALL(10);
 
+       $display("Checking intialized memory against the addr provided");
 
-	end
+      error = 0; 
+      	for(i=0; i<(1 << (ADDRWIDTH)); i++) begin
+        if (mem_val(i) != i) begin
+          error = 1;
+          $display("Error in Memory initialization at address = %d, value = %d", i, mem_val(i));
+        	end
+        `STALL(1);
+      	end
+      	if (error == 0) $display("-- Memory initialization done --");
+
+       `STALL(5);
+
+       ////////// Memory Initialization chk (Read operation)//////////
+       $display("Checking intialized memory against associative array");
+       
+		   mem_chk_full();
+
+       ////////// Random Values //////////
+
+       randData = new;
+			 randAddr = new;
+
+    	 for(i=0; i<(1 << (ADDRWIDTH)); i++) begin
+    	 		assert(randData.randomize()) else $error("Data randomization failed");
+    	 		assert(randAddr.randomize()) else $error("Addr randomization failed");
+					wrMem(randAddr.addr, randData.data); 
+       end
+
+       `STALL(5);
+
+       $display("Checking randomly populated memory");
+       mem_chk_full();
+
+       $stop();
+
+  end
+
 
 endmodule : top

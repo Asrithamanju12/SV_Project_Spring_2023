@@ -1,0 +1,50 @@
+package definitions;
+
+//-----------------------------------------------------------------
+// Key Params
+//-----------------------------------------------------------------
+
+
+  parameter N = 8;
+  parameter ADDRWIDTH = 6;
+  parameter DATAWIDTH      = 8;
+  parameter SLV_ADDR_SIZE  = 7;
+  parameter SLV_ADDR_PARAM = 7'b101_1001;
+  parameter WRITE_LAT      = 34;
+
+  parameter CLOCKCYCLE = 20;
+  parameter CLOCKWIDTH = CLOCKCYCLE/2;
+
+  class data_rand #(parameter DATAWIDTH = 8);
+    
+    randc bit [DATAWIDTH-1:0] data;
+
+    constraint c { data[DATAWIDTH-1:0] > 0; data[DATAWIDTH-1:0] < ((1<<DATAWIDTH)-1);}
+    
+  endclass 
+
+  class addr_rand #(parameter ADDRWIDTH = 6);
+
+      randc bit [ADDRWIDTH-1:0] addr;
+
+      constraint c { addr[ADDRWIDTH-1:0] > 0; addr[ADDRWIDTH-1:0] < ((1<<ADDRWIDTH)-1);}
+        
+  endclass
+
+ class ref_mem;
+   // Declaring associative array as local so that is can't modified elsewhere
+   local logic [DATAWIDTH-1:0] M     [logic [ADDRWIDTH-1:0]];
+
+   function void write(logic [ADDRWIDTH-1:0] addr, logic [DATAWIDTH-1:0] data);
+     M[addr]    = data;
+   endfunction
+
+   function logic [DATAWIDTH-1:0] read(logic [ADDRWIDTH-1:0] addr);
+     read = M[addr];
+   endfunction
+
+ endclass 
+
+
+endpackage : definitions
+  
