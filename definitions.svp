@@ -10,7 +10,8 @@ package definitions;
   parameter DATAWIDTH      = 8;
   parameter SLV_ADDR_SIZE  = 7;
   parameter SLV_ADDR_PARAM = 7'b101_1001;
-  parameter WRITE_LAT      = 34;
+  parameter WRITE_LAT      = 35;
+  parameter READ_LAT       = 24;
 
   parameter CLOCKCYCLE = 20;
   parameter CLOCKWIDTH = CLOCKCYCLE/2;

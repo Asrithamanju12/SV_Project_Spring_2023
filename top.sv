@@ -23,6 +23,23 @@ module top();
 
   i2c_wrapper dut (.*);
 
+  bind i2c_wrapper top_Assertions wrap_assert 
+  			(clk,
+	  		 reset,
+	  		 D,
+	  		 S,
+	  		 MSBIn,
+	  		 LSBIn,
+	  		 addr,
+	  		 wr_en, rd_en,
+	  		 dataout,
+	  		 DataValid,
+	  		 mem_wr_en_in,
+	  		 mem_data_in,
+	  		 mem_addr_in,
+	  		 data);
+
+
 	initial begin
 		clk = '0;
 		forever #CLOCKWIDTH clk = ~clk;
@@ -109,7 +126,7 @@ module top();
        
 		   mem_chk_full();
 
-       ////////// Random Values //////////
+       ////////// Checking result by giving Random Values //////////
 
        randData = new;
 			 randAddr = new;
